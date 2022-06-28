@@ -54,12 +54,14 @@ impl AverageColor {
         Ok(AverageColor(red, green, blue))
     }
 
+    #[wasm_bindgen(js_name = fromBytes)]
     pub fn from_bytes(image_bytes: &[u8]) -> Result<AverageColor, JsError> {
         let image_data = Self::from_mem(image_bytes)?;
 
         Self::get_average_color(image_data)
     }
 
+    #[wasm_bindgen(js_name = fromUrl)]
     #[cfg(feature = "remote_image")]
     pub async fn from_url(url: String) -> Result<AverageColor, JsError> {
         let image = reqwest::get(url).await?;
@@ -70,6 +72,7 @@ impl AverageColor {
         Self::get_average_color(image_data)
     }
 
+    #[wasm_bindgen(js_name = fromBase64)]
     pub fn from_base64(base64: String) -> Result<AverageColor, JsError> {
         let image_bytes = base64::decode(base64)?;
         let image_data = Self::from_mem(image_bytes.as_slice())?;

@@ -1,7 +1,8 @@
 [package]
 name = "avgcol"
 version = "0.1.0"
-authors = ["Juliette Cordor <grassojames5@gmail.com>"]
+description = "Quickly generate average colours for your images (WASM)"
+authors = ["Juliette Cordor"]
 edition = "2021"
 
 [lib]

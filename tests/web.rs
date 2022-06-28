@@ -3,6 +3,8 @@
 #![cfg(target_arch = "wasm32")]
 
 extern crate wasm_bindgen_test;
+use std::assert_eq;
+
 use wasm_bindgen_test::*;
 
 use avgcol::*;
@@ -19,4 +21,8 @@ fn check_image() {
         Ok(v) => v,
         Err(_) => panic!("Failed to load image"),
     };
+
+    let expected = AverageColor(178, 181, 172);
+
+    assert_eq!(image, expected);
 }

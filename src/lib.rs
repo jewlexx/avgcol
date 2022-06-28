@@ -2,7 +2,7 @@ mod utils;
 
 use wasm_bindgen::prelude::*;
 
-use image::{Rgb, RgbImage};
+use image::RgbImage;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -12,7 +12,7 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 macro_rules! sum {
     ($vec:expr, $sum_type:tt) => {{
-        let mut sum: $sum_type = 0.into();
+        let mut sum: $sum_type = 0 as $sum_type;
 
         for i in $vec {
             sum += i as $sum_type;
@@ -23,7 +23,16 @@ macro_rules! sum {
 }
 
 #[wasm_bindgen]
-pub struct AverageColor(Rgb<f64>);
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct AverageColor(pub u64, pub u64, pub u64);
+
+impl Drop for AverageColor {
+    fn drop(&mut self) {
+        self.0 = 0;
+        self.1 = 0;
+        self.2 = 0;
+    }
+}
 
 #[wasm_bindgen]
 impl AverageColor {
@@ -35,16 +44,14 @@ impl AverageColor {
     }
 
     fn get_average_color(image_data: RgbImage) -> Result<AverageColor, JsError> {
-        let pixels: Vec<Rgb<u8>> = image_data.pixels().cloned().collect();
-        let pixels_length = pixels.len() as f64;
+        let pixels: Vec<_> = image_data.pixels().cloned().collect();
+        let pixels_length = pixels.len() as u64;
 
-        let red = sum!(pixels.iter().map(|pixel| pixel[0]), f64) / pixels_length;
-        let green = sum!(pixels.iter().map(|pixel| pixel[1]), f64) / pixels_length;
-        let blue = sum!(pixels.iter().map(|pixel| pixel[2]), f64) / pixels_length;
+        let red = sum!(pixels.iter().map(|pixel| pixel[0]), u64) / pixels_length;
+        let green = sum!(pixels.iter().map(|pixel| pixel[1]), u64) / pixels_length;
+        let blue = sum!(pixels.iter().map(|pixel| pixel[2]), u64) / pixels_length;
 
-        let average: [f64; 3] = [red, green, blue];
-
-        Ok(AverageColor(Rgb(average)))
+        Ok(AverageColor(red, green, blue))
     }
 
     pub fn from_bytes(image_bytes: &[u8]) -> Result<AverageColor, JsError> {

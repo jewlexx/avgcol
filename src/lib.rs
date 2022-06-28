@@ -79,4 +79,15 @@ impl AverageColor {
 
         Self::get_average_color(image_data)
     }
+
+    #[wasm_bindgen(js_name = isLight)]
+    pub fn is_light(&self) -> bool {
+        let red = self.0 as f64;
+        let green = self.1 as f64;
+        let blue = self.2 as f64;
+
+        let brightness = (red * 0.2126 + green * 0.7152 + blue * 0.0722) / 255.0;
+
+        brightness > 0.5
+    }
 }

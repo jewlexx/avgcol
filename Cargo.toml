@@ -6,7 +6,7 @@ authors = ["Juliette Cordor"]
 edition = "2021"
 homepage = "https://github.com/jewlexx/avgcol"
 repository = "https://github.com/jewlexx/avgcol"
-license = "MIT or Apache-2.0"
+license = "MIT OR Apache-2.0"
 
 [features]
 remote_image = ["reqwest"]

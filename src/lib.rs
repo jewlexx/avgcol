@@ -1,21 +1,31 @@
+#![warn(missing_docs)]
+#![doc = include_str!("../README.md")]
+
 use image::RgbImage;
 
 #[derive(Debug, thiserror::Error)]
+/// Error types for AvgCol
 pub enum Error {
     #[error("Image error: {0}")]
+    /// Error with parsing images
     Image(#[from] image::ImageError),
 
-    #[error("Base64 error: {0}")]
+    #[error("Failed to decode base64: {0}")]
+    /// Error decoding base64
     Base64(#[from] base64::DecodeError),
 
     #[cfg(feature = "remote_image")]
-    #[error("HTTP error: {0}")]
+    #[error("Failed to get remote image: {0}")]
+    /// Error interacting with remote images
     Reqwest(#[from] reqwest::Error),
 }
 
+/// Result type for AvgCol. Simply wraps the given type with the crate error
+/// using the [`std::result::Result`] type
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
+/// AverageColor struct containing the rgb values
 pub struct AverageColor(pub u64, pub u64, pub u64);
 
 impl Drop for AverageColor {
@@ -42,6 +52,7 @@ impl AverageColor {
         ))
     }
 
+    /// Generate average colour from the given bytes
     pub fn from_bytes<'a>(image_bytes: impl Into<bytes::Bytes>) -> Result<AverageColor> {
         let bytes: bytes::Bytes = image_bytes.into();
         let image_data = image::load_from_memory(&bytes)?.to_rgb8();
@@ -50,6 +61,7 @@ impl AverageColor {
     }
 
     #[cfg(feature = "remote_image")]
+    /// Generate average colour from the given image url
     pub async fn from_url(url: impl AsRef<str>) -> Result<AverageColor> {
         let image = reqwest::get(url.as_ref()).await?;
         let bytes = image.bytes().await?;
@@ -57,12 +69,14 @@ impl AverageColor {
         Self::from_bytes(bytes)
     }
 
+    /// Generate average colour from the given base64 string
     pub fn from_base64(base64: impl AsRef<str>) -> Result<AverageColor> {
         let image_bytes = base64::decode(base64.as_ref())?;
 
         Self::from_bytes(image_bytes)
     }
 
+    /// Detect whether the average colour is light or dark
     pub fn is_light(&self) -> bool {
         let red = self.0 as f64;
         let green = self.1 as f64;

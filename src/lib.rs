@@ -27,13 +27,6 @@ impl Drop for AverageColor {
 }
 
 impl AverageColor {
-    fn from_mem<'a>(bytes: impl Into<&'a [u8]>) -> Result<RgbImage> {
-        let bytes: &[u8] = bytes.into();
-        let image_data = image::load_from_memory(bytes)?;
-
-        Ok(image_data.to_rgb8())
-    }
-
     fn get_average_color(image_data: RgbImage) -> Result<AverageColor> {
         let pixels: Vec<_> = image_data.pixels().cloned().collect();
         let pixels_length = pixels.len() as u64;
@@ -49,8 +42,9 @@ impl AverageColor {
         ))
     }
 
-    pub fn from_bytes(image_bytes: &[u8]) -> Result<AverageColor> {
-        let image_data = Self::from_mem(image_bytes)?;
+    pub fn from_bytes<'a>(image_bytes: impl Into<bytes::Bytes>) -> Result<AverageColor> {
+        let bytes: bytes::Bytes = image_bytes.into();
+        let image_data = image::load_from_memory(&bytes)?.to_rgb8();
 
         Self::get_average_color(image_data)
     }
@@ -58,18 +52,15 @@ impl AverageColor {
     #[cfg(feature = "remote_image")]
     pub async fn from_url(url: impl AsRef<str>) -> Result<AverageColor> {
         let image = reqwest::get(url.as_ref()).await?;
-        let bytes: &[u8] = &image.bytes().await?;
+        let bytes = image.bytes().await?;
 
-        let image_data = Self::from_mem(bytes)?;
-
-        Self::get_average_color(image_data)
+        Self::from_bytes(bytes)
     }
 
     pub fn from_base64(base64: impl AsRef<str>) -> Result<AverageColor> {
         let image_bytes = base64::decode(base64.as_ref())?;
-        let image_data = Self::from_mem(image_bytes.as_slice())?;
 
-        Self::get_average_color(image_data)
+        Self::from_bytes(image_bytes)
     }
 
     pub fn is_light(&self) -> bool {
@@ -87,13 +78,21 @@ impl AverageColor {
 mod tests {
     use super::AverageColor;
 
+    const DEMO_IMAGE: &[u8] = include_bytes!("../tests/image.jpg");
     const EXPECTED: AverageColor = AverageColor(178, 180, 172);
 
     #[test]
     fn test_image_average_color() {
-        const DEMO_IMAGE: &[u8] = include_bytes!("../tests/image.jpg");
-
         let image = AverageColor::from_bytes(DEMO_IMAGE).expect("Failed to load image");
+
+        assert_eq!(image, EXPECTED);
+    }
+
+    #[test]
+    fn test_base64_image() {
+        let base64_string = base64::encode(DEMO_IMAGE);
+
+        let image = AverageColor::from_base64(base64_string).expect("Failed to load image");
 
         assert_eq!(image, EXPECTED);
     }
@@ -109,5 +108,12 @@ mod tests {
             .expect("Failed to load image");
 
         assert_eq!(image, EXPECTED);
+    }
+
+    #[test]
+    fn test_is_light() {
+        let image = AverageColor::from_bytes(DEMO_IMAGE).expect("Failed to load image");
+
+        assert!(image.is_light());
     }
 }
